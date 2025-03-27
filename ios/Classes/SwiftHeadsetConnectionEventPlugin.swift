@@ -19,13 +19,19 @@ public class SwiftHeadsetConnectionEventPlugin: NSObject, FlutterPlugin {
         if (call.method == "getCurrentState"){
             result(HeadsetIsConnect())
         }
+        else if (call.method == "getCurrentStateInfo")   {
+            result(HeadsetIsConnectName())
+        } else if (call.method == "getConnectedHeadsetInfo") {
+            result(getConnectedHeadsetInfo())
+        }
     }
     
     public override init() {
         super.init()
         registerAudioRouteChangeBlock()
     }
-    
+
+        
     // AVAudioSessionRouteChange notification is Detaction Headphone connection status
     //(https://developer.apple.com/documentation/avfoundation/avaudiosession/responding_to_audio_session_route_changes)
     // When the AVAudioSessionRouteChange is called from notification center , the blcoking code detect the headphone connection.
@@ -51,7 +57,8 @@ public class SwiftHeadsetConnectionEventPlugin: NSObject, FlutterPlugin {
     
     func HeadsetIsConnect() -> Int  {
         let currentRoute = AVAudioSession.sharedInstance().currentRoute
-        for output in currentRoute.outputs {
+        // print("OS HEADPHONE LOGS \(currentRoute.inputs) === \(currentRoute.outputs)")        
+        for output in currentRoute.inputs {
             let portType = output.portType
             if portType == AVAudioSession.Port.headphones || portType == AVAudioSession.Port.bluetoothA2DP || portType == AVAudioSession.Port.bluetoothHFP {
                 return 1
@@ -61,4 +68,37 @@ public class SwiftHeadsetConnectionEventPlugin: NSObject, FlutterPlugin {
         }
         return 0
     }
+
+    func HeadsetIsConnectName() -> String  {
+        let currentRoute = AVAudioSession.sharedInstance().currentRoute
+        print("OS HEADPHONE LOGS \(currentRoute.inputs) === \(currentRoute.outputs)")      
+          return "INPUT \(currentRoute.inputs)=== OUTPUT\nn \(currentRoute.outputs)";
+        // for output in currentRoute.inputs {
+        //     let portType = output.portType
+        //     if portType == AVAudioSession.Port.headphones || portType == AVAudioSession.Port.bluetoothA2DP || portType == AVAudioSession.Port.bluetoothHFP {
+        //         return 1
+        //     } else {
+        //         return 0
+        //     }
+        // }
+        // return 0
+    }
+
+    func getConnectedHeadsetInfo() -> [String: String]   {
+
+        var dict: [String: String] = [:]
+        let currentRoute = AVAudioSession.sharedInstance().currentRoute
+
+        for output in currentRoute.inputs {
+            let portType = output.portType
+            if portType == AVAudioSession.Port.headphones || portType == AVAudioSession.Port.bluetoothA2DP || portType == AVAudioSession.Port.bluetoothHFP {
+                dict["ptype"] = portType.rawValue
+                dict["pname"] = output.portName
+                dict["pId"] = output.uid
+                return dict
+            } 
+        }
+        return dict
+    }
+
 }

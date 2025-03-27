@@ -15,6 +15,10 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
+import io.flutter.plugin.common.PluginRegistry.Registrar;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * HeadsetConnectionEventPlugin
@@ -71,9 +75,9 @@ public class HeadsetConnectionEventPlugin implements FlutterPlugin, MethodCallHa
 
     private boolean getConnectedHeadset(AudioManager audioManager) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return audioManager.isWiredHeadsetOn() || audioManager.isBluetoothA2dpOn() || audioManager.isBluetoothScoOn();
+            return audioManager.isWiredHeadsetOn() || audioManager.isBluetoothA2dpOn();
         } else {
-            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
 
             for (AudioDeviceInfo device : devices) {
                 if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
@@ -89,13 +93,76 @@ public class HeadsetConnectionEventPlugin implements FlutterPlugin, MethodCallHa
         }
     }
 
+    private String getConnectedHeadsetName(AudioManager audioManager) {
+        
+        String headsetName = "";
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+
+            for (AudioDeviceInfo device : devices) {
+                if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
+                        || device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+                        || device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                        || device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                        || device.getType() == AudioDeviceInfo.TYPE_USB_DEVICE
+                        || device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
+
+                    headsetName += "\nINPUT=>Pname=" + device.getProductName() + " Type:" + device.getType() + " isSink:";
+                    headsetName += device.isSink();
+                     headsetName += " isSource:" ;
+                      headsetName += device.isSource();
+                }
+            }
+
+            AudioDeviceInfo[] odevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+
+            for (AudioDeviceInfo device : odevices) {
+                if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
+                        || device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+                        || device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                        || device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                        || device.getType() == AudioDeviceInfo.TYPE_USB_DEVICE
+                        || device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
+
+                    headsetName += "\nOUTPUT=>Pname=" + device.getProductName() + " Type:" + device.getType() + " isSink:";
+                    headsetName += device.isSink();
+                     headsetName += " isSource:" ;
+                      headsetName += device.isSource();
+                }
+            }
+            return headsetName;
+    }
+
+    private Map<String, Object> getConnectedHeadsetInfo(AudioManager audioManager) {
+            AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+
+            for (AudioDeviceInfo device : devices) {
+                if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
+                        || device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+                        || device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                        || device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
+                        || device.getType() == AudioDeviceInfo.TYPE_USB_DEVICE
+                        || device.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
+
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("pname", device.getProductName());
+                        data.put("ptype", device.getType());
+                        data.put("pId", device.getId());
+                        return data;
+                }
+            }
+            return new HashMap<>();
+
+    }
+
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         if (call.method.equals("getCurrentState")) {
             currentState = getConnectedHeadset(audioManager) ? 1: 0;
             result.success(currentState);
-        } else {
-            result.notImplemented();
+        } else if (call.method.equals("getCurrentStateInfo")) {
+            result.success(getConnectedHeadsetName(audioManager));
+        } else if (call.method.equals("getConnectedHeadsetInfo")) {
+            result.success(getConnectedHeadsetInfo(audioManager));
         }
     }
 

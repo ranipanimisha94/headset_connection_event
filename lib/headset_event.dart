@@ -1,5 +1,3 @@
-// ignore_for_file: constant_identifier_names
-
 import 'dart:async';
 import 'dart:io';
 
@@ -54,6 +52,19 @@ class HeadsetEvent {
       default:
         return HeadsetState.DISCONNECT;
     }
+  }
+
+  Future<String?> get getCurrentStateInfo async {
+    return await _channel.invokeMethod<String?>('getCurrentStateInfo');
+  }
+
+  Future<Map<String, dynamic>?> get getConnectedHeadsetInfo async {
+    final Map<dynamic, dynamic>? result =
+        await _channel.invokeMethod('getConnectedHeadsetInfo');
+
+    // Convert dynamic keys to String to get Map<String, dynamic>
+    return result
+        ?.map((key, value) => MapEntry(key.toString(), value.toString()));
   }
 
   Future<bool> requestPermission() async {
